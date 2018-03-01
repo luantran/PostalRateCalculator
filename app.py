@@ -4,7 +4,7 @@ import csv
 
 
 class PostalRatesCalculator:
-    def __init__(self, argv):
+    def __init__(self):
         # raise InputError("No ")
 
         self.from_address = ''
@@ -15,6 +15,8 @@ class PostalRatesCalculator:
         self.weight = ''
         self.post = ''
 
+
+    def getRate(self, argv):
         try:
             opts, args = getopt.getopt(argv, "f:t:l:w:h:k:p:",
                                        ["from=", "to=", "length=", "width=", "height=", "weight=", "post="])
@@ -41,19 +43,35 @@ class PostalRatesCalculator:
                     self.height and self.weight and self.post):
             print("Usage: app.py -f <from_address> -t <to_address> -l <length in cm> -w <width in cm> "
                   "-h <height in cm> -k <weight in kg> -p <post type>")
-            sys.exit(0)
-        self.validateInputs()
-        self.calculateRate()
+            return False
+
+        if not self.validateInputs():
+            return False
+        if not self.searchRate():
+            return False
 
     def validateInputs(self):
         self.from_address = self.checkPostalCode(self.from_address)
+        if not self.from_address:
+            return False
+
         self.to_address = self.checkPostalCode(self.to_address)
+        if not self.to_address:
+            return False
         dict = self.checkDimensions(self.length, self.height, self.width)
+        if not dict:
+            return False
         self.length = dict['Length']
         self.height = dict['Height']
         self.width = dict['Width']
+
         self.weight = self.checkWeight(self.weight)
+        if not self.weight:
+            return False
         self.post = self.checkPostType(self.post)
+        if not self.post:
+            return False
+        return True
 
     def checkPostalCode(self, postal_code):
         postal_code = postal_code.upper()
@@ -62,17 +80,17 @@ class PostalRatesCalculator:
                 postal_code = postal_code.split(" ")[0] + postal_code.split(" ")[1]
             else:
                 print("Invalid postal code format! Please input the following format: A1B2C3 or A1B 2C3")
-                sys.exit(0)
+                return False
 
         if len(postal_code) == 6:
             if not (postal_code[0].isalpha() and postal_code[1].isdigit() and postal_code[2].isalpha() and postal_code[
                 3].isdigit() and
                         postal_code[4].isalpha() and postal_code[5].isdigit()):
                 print("Invalid postal code format! Please input the following format: A1B2C3 or A1B 2C3")
-                sys.exit(0)
+                return False
         else:
             print("Invalid postal code format! Please input the following format: A1B2C3 or A1B 2C3")
-            sys.exit(0)
+            return False
         return postal_code
 
     def checkDimensions(self, length, height, width):
@@ -103,12 +121,12 @@ class PostalRatesCalculator:
             sys.exit(0)
         return post
 
-    def calculateRate(self):
+    def searchRate(self):
         reader = csv.DictReader(open('data.csv'))
         rate = ''
         for row in reader:
             if self.from_address == row['from'] and self.to_address == row['to']:
-                if self.length == float(row['length']) and self.width == float(row['width']) and self.height == float(row['height']) and self.weight == float(row['weight']):
+                if float(self.length) == float(row['length']) and float(self.width) == float(row['width']) and float(self.height) == float(row['height']) and float(self.weight) == float(row['weight']):
                     if self.post == row['post']:
                         rate = row['rate']
         if rate:
@@ -117,6 +135,7 @@ class PostalRatesCalculator:
             print("No rates found!")
 
 if __name__ == "__main__":
-    prc = PostalRatesCalculator(sys.argv[1:])
+    prc = PostalRatesCalculator()
+    prc.getRate(sys.argv[1:])
     # prc.calculateRate()
     # prc.printAll()
