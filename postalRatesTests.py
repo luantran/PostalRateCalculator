@@ -1,6 +1,7 @@
 # from app import PostalRatesCalculator
 from postalRatesCalculator import PostalRatesCalculator
 from nose.tools import *
+import csv
 import unittest
 from io import StringIO
 from unittest.mock import patch
@@ -331,4 +332,18 @@ class PostalRatesTests(unittest.TestCase):
             prc.getRate(args)
             output = fake_out.getvalue()
             self.assertEqual(output, "No rates found!\n")
+
+    def test25_variable_inputs_sanity(self):
+        args = ['-f', 'V4R1H7', '-t', 'H2X1Z8', '-l', '10', '-w', '10', '-h', '10', '-k', '2.0', '-p','regular']
+        with open('data.csv', 'r') as f:
+            next(f)
+            reader = csv.reader(f)
+            for row in reader:
+                input_args = ['-f', row[0], '-t', row[1], '-l', row[2], '-w', row[3], '-h', row[4], '-k', row[5], '-p', str.lower(row[6])]
+
+                with patch('sys.stdout', new=StringIO()) as fake_out:
+                    prc = PostalRatesCalculator()
+                    prc.getRate(input_args)
+                    output = fake_out.getvalue()
+                    self.assertEqual(output, row[7]+"\n")
 
